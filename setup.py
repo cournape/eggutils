@@ -5,6 +5,7 @@ if __name__ == "__main__":
         version="0.0.1",
         license="BSD",
         description="A set of utilities to create/manipulate eggs",
+        long_description=open("README").read(),
         author="David Cournapeau",
         author_email="cournape@gmail.com",
         entry_points= {
@@ -12,4 +13,6 @@ if __name__ == "__main__":
                 "make-dll-egg = eggutils.eggutils:wrap_main"
                 ]
         },
-        packages=["eggutils"])
+        packages=["eggutils"],
+        platforms=['any'],
+        url = "http://pypi.python.org/pypi/eggutils")
