@@ -1,0 +1,18 @@
+Set of utilities to manipulate and create eggs without setuptools, and outside
+distutils context (i.e. without running setup).
+
+Making an egg containing DLL
+============================
+
+Given Windows model for DLLs, when several python packages depends on the same
+dll to be shared between extensions, it may be useful to have a "DLL egg" which
+put the dlls within the python installation such as the dll are automatically
+found by any extension to the corresponding python interpreter.
+
+Usage:
+
+::
+        make-dll-egg -m PKG-INFO foo.dll bar.dll
+
+This will create a DLL with metadata taken from the PKG-INFO file, containing
+both foo and bar dlls.
