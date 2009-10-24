@@ -95,16 +95,26 @@ def _write_list (file, name, values):
         _write_field(file, name, value)
 
 _RE_NAME = re.compile("Name\s*:\s*([a-zA-Z0-9_\-]+)")
+_RE_VERSION = re.compile("Version\s*:\s*([a-zA-Z0-9_\-\.]+)")
 
 def main(files, metadata):
     def read_meta():
         ret = {}
         f = open(metadata)
         try:
-            for l in f.readlines():
-                m = _RE_NAME.match(l)
+            cnt = f.readlines()
+            for line in cnt:
+                m = _RE_NAME.match(line)
                 if m:
                     ret["name"] = m.group(1)
+                    break
+
+            for line in cnt:
+                m = _RE_VERSION.match(line)
+                if m:
+                    ret["version"] = m.group(1)
+                    break
+
         finally:
             f.close()
 
