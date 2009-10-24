@@ -1,0 +1,5 @@
+2009-10-24 David Cournapeau <cournape@gmail.com>
+
+    * Start the project
+    * v0.0.2: can build simple pure dll eggs compatible with
+    setuptools/easy_install with the command make-dll-egg
