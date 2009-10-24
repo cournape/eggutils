@@ -1,0 +1,155 @@
+import zipfile
+import re
+import os
+
+from distutils.util import rfc822_escape
+
+# Metadata:
+#  - Metadata-Version
+#  - Name
+#  - Version (should be parseable by LooseVersion or StrictVersion)
+#  - Summary: one line summary
+#  - Description: multi line description (optional)
+#  - Keywords: comma separated list (optional)
+#  - Home-Page: url (optional)
+#  - Author (optional)
+#  - Author-email (optional)
+#  - License
+#  - Download-Url (optional)
+#  - Platform: comma separated list
+#  - Classifier: trove
+# 1.1 (PEP 314)
+#  - Requires
+#  - Provides
+#  - Obsoletes
+class MetaData(object):
+    def __init__(self, name, version=None, summary=None, description=None,
+                 url=None, author=None, author_email=None, license=None,
+                 download_url=None, keywords=None, platforms=None):
+        self.name = name
+        self.version = version
+        self.summary = summary
+        self.description = description
+        if not keywords:
+            self.keywords = []
+        else:
+            self.keywords = keywords
+        self.url = url
+        self.author = author
+        self.author_email = author_email
+        self.license = license
+        self.download_url = download_url
+        if not platforms:
+            self.platforms = []
+        else:
+            self.platforms = platforms
+
+        self.requires = []
+        self.provides = []
+        self.obsoletes = []
+
+def write_pkg_file (file, metadata):
+    """Write the PKG-INFO format data to a file object.
+    """
+    version = '1.0'
+    if metadata.provides or metadata.requires or metadata.obsoletes:
+        version = '1.1'
+
+    _write_field(file, 'Metadata-Version', version)
+    _write_field(file, 'Name', metadata.name or "UNKNOWN")
+    _write_field(file, 'Version', metadata.version or "UNKNOWN")
+    _write_field(file, 'Summary', metadata.description or "UNKNOWN")
+    _write_field(file, 'Home-page', metadata.url or "UNKNOWN")
+    _write_field(file, 'Author', metadata.contact or "UNKNOWN")
+    _write_field(file, 'Author-email', metadata.contact_email or "UNKNOWN")
+    _write_field(file, 'License', metadata.license or "UNKNOWN")
+    if metadata.download_url:
+        _write_field(file, 'Download-URL', metadata.download_url or "UNKNOWN")
+
+    # long_desc = rfc822_escape( self.get_long_description())
+    # _write_field(file, 'Description', long_desc)
+
+    # keywords = string.join( self.get_keywords(), ',')
+    # if keywords:
+    #     _write_field(file, 'Keywords', keywords)
+
+    # _write_list(file, 'Platform', self.get_platforms())
+    # _write_list(file, 'Classifier', self.get_classifiers())
+
+    # # PEP 314
+    # _write_list(file, 'Requires', self.get_requires())
+    # _write_list(file, 'Provides', self.get_provides())
+    # _write_list(file, 'Obsoletes', self.get_obsoletes())
+
+def _write_field(file, name, value):
+
+    if isinstance(value, unicode):
+        value = value.encode(PKG_INFO_ENCODING)
+    else:
+        value = str(value)
+    file.write('%s: %s\n' % (name, value))
+
+def _write_list (file, name, values):
+
+    for value in values:
+        _write_field(file, name, value)
+
+_RE_NAME = re.compile("Name\s*:\s*([a-zA-Z0-9_\-]+)")
+
+def main(files, metadata):
+    def read_meta():
+        ret = {}
+        f = open(metadata)
+        try:
+            for l in f.readlines():
+                m = _RE_NAME.match(l)
+                if m:
+                    ret["name"] = m.group(1)
+        finally:
+            f.close()
+
+        return ret
+
+    parsed = read_meta()
+    egg = zipfile.ZipFile(parsed["name"] + ".egg", "w", zipfile.ZIP_DEFLATED)
+
+    try:
+        b = os.path.basename(metadata)
+        egg.write(metadata, "EGG-INFO/PKG-INFO")
+
+        for f in files:
+            b = os.path.basename(f)
+            egg.write(f, "EGG-INFO/scripts/" + b)
+    finally:
+        egg.close()
+
+def wrap_main():
+    from optparse import OptionParser
+    parser = OptionParser()
+    parser.add_option("-m", "--meta-data", dest="metadata",
+                      help="PKG-INFO file for metadata")
+
+    (options, args) = parser.parse_args()
+
+
+    if options.metadata:
+        main(args, options.metadata)
+
+if __name__ == "__main__":
+    pass
+    #dll_files = ["/usr/lib/libkrb5support.dylib"]
+    #meta = {"name": "mkl-ia32-static", 
+    #    "version": "11.1.048"}
+
+    #egg = zipfile.ZipFile(meta["name"] + ".egg", "w", zipfile.ZIP_DEFLATED)
+
+    #try:
+    #    pkg = StringIO.StringIO()
+    #    write_pkg_file(pkg, MetaData(**meta))
+    #    egg.writestr("EGG-INFO/PKG-INFO", pkg.getvalue())
+
+    #    for f in dll_files:
+    #        b = os.path.basename(f)
+    #        egg.write(f, "EGG-INFO/scripts/" + b)
+    #finally:
+    #    egg.close()
