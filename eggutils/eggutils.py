@@ -8,6 +8,47 @@ from distutils.util import rfc822_escape
 # Copied from pkg_resources (setuptools 0.6.9c)
 PY_MAJOR = sys.version[:3]
 
+def get_build_platform():
+    """Return this platform's string for platform-specific distributions
+
+    XXX Currently this is the same as ``distutils.util.get_platform()``, but it
+    needs some hacks for Linux and Mac OS X.
+    """
+    from distutils.util import get_platform
+    plat = get_platform()
+    if sys.platform == "darwin" and not plat.startswith('macosx-'):
+        try:
+            version = _macosx_vers()
+            machine = os.uname()[4].replace(" ", "_")
+            return "macosx-%d.%d-%s" % (int(version[0]), int(version[1]),
+                _macosx_arch(machine))
+        except ValueError:
+            # if someone is running a non-Mac darwin system, this will fall
+            # through to the default implementation
+            pass
+    return plat
+
+def to_filename(name):
+    """Convert a project or version name to its filename-escaped form
+
+    Any '-' characters are currently replaced with '_'.
+    """
+    return name.replace('-','_')
+
+def egg_name(project_name, version, py_version=None, platform=False):
+    """Return what this distribution's standard .egg filename should be"""
+    basename = "%s-%s-py%s" % (
+        to_filename(project_name), to_filename(version),
+        py_version or PY_MAJOR
+        )
+
+    if platform:
+        basename += '-' + get_build_platform()
+
+    return basename + ".egg"
+
+# end of setuptools copy
+
 # Metadata:
 #  - Metadata-Version
 #  - Name
@@ -125,7 +166,9 @@ def main(files, metadata, py_version=None):
         return ret
 
     parsed = read_meta()
-    egg = zipfile.ZipFile(parsed["name"] + ".egg", "w", zipfile.ZIP_DEFLATED)
+    filename = egg_name(parsed["name"], parsed["version"], py_version,
+                        platform=True)
+    egg = zipfile.ZipFile(filename, "w", zipfile.ZIP_DEFLATED)
 
     try:
         b = os.path.basename(metadata)
