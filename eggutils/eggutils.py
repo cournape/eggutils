@@ -1,8 +1,12 @@
 import zipfile
 import re
 import os
+import sys
 
 from distutils.util import rfc822_escape
+
+# Copied from pkg_resources (setuptools 0.6.9c)
+PY_MAJOR = sys.version[:3]
 
 # Metadata:
 #  - Metadata-Version
@@ -97,7 +101,7 @@ def _write_list (file, name, values):
 _RE_NAME = re.compile("Name\s*:\s*([a-zA-Z0-9_\-]+)")
 _RE_VERSION = re.compile("Version\s*:\s*([a-zA-Z0-9_\-\.]+)")
 
-def main(files, metadata):
+def main(files, metadata, py_version=None):
     def read_meta():
         ret = {}
         f = open(metadata)
@@ -138,12 +142,18 @@ def wrap_main():
     parser = OptionParser()
     parser.add_option("-m", "--meta-data", dest="metadata",
                       help="PKG-INFO file for metadata")
+    parser.add_option("-p", "--python-version", dest="py_version",
+                      help="Python version the egg should target (major.minor " \
+                           "only)")
 
     (options, args) = parser.parse_args()
 
-
     if options.metadata:
-        main(args, options.metadata)
+        if options.py_version:
+            py_version = options.py_version
+        else:
+            py_version = PY_MAJOR
+        main(args, options.metadata, py_version)
 
 if __name__ == "__main__":
     pass
